@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Casos Clínicos Interactivos - Selección de Evaluación</title>
+    <style>
+        /* Layout general y tipografía */
+        body {font-family: 'Arial', sans-serif;line-height: 1.6;color: #333;max-width: 900px;margin: 0 auto;padding: 20px;background-color: #f9f9f9;}
+        h1, h2, h3 {color: #2c3e50;}
+
+        /* Credenciales */
+        .credits {margin: 6px 0 20px; font-size: 13px; color: #7f8c8d; text-align: center;}
+
+        /* Selector de modo */
+        .selector-container {background: white; border-radius: 12px; box-shadow:0 4px 12px rgba(0,0,0,0.12); padding:30px; margin:40px 0 30px;}
+        .selector-title {font-size: 1.3em; margin-bottom: 18px;}
+        .select-btns {display: flex; gap: 25px; flex-wrap: wrap;}
+        .select-btn {flex:1; min-width: 240px; padding:20px 0;font-size:1.2em; border-radius:8px; border:0; cursor:pointer; transition:background 0.3s, box-shadow 0.3s;}
+        .select-btn.psico {background: linear-gradient(90deg,#3498db 80%, #1abc9c 120%); color:white; font-weight:bold;}
+        .select-btn.clin {background: linear-gradient(90deg,#e67e22 80%, #2ecc71 120%); color:white; font-weight:bold;}
+        .select-btn:hover {box-shadow:0 2px 8px rgba(44,62,80,0.08);}
+        .hidden {display:none;}
+        .back-btn {margin:22px 0 0 0; background:#7f8c8d; color:white; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-size:16px;}
+
+        /* Estilos comunes del quiz (compatibles con ambos modos) */
+        .case-container {background-color: white;border-radius: 10px;padding: 25px;margin-bottom: 30px;box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
+        .case-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 15px;}
+        .question {background-color: #f0f8ff;padding: 20px;border-left: 5px solid #3498db;margin: 20px 0;border-radius: 5px;}
+        .options {margin: 15px 0;}
+        .option {margin: 10px 0;padding: 12px 15px;background-color: #f8f9fa;border-radius: 5px;cursor: pointer;transition: all 0.3s;border: 1px solid #ddd;}
+        .option:hover {background-color: #e9ecef;transform: translateX(5px);}
+        .selected {background-color: #d4edff;border-left: 4px solid #3498db;}
+        .correct {background-color: #d4edda;border-left: 4px solid #2ecc71;}
+        .incorrect {background-color: #f8d7da;border-left: 4px solid #e74c3c;}
+        .feedback {padding: 15px;margin-top: 15px;border-radius: 5px;display: none;animation: fadeIn 0.5s;}
+        @keyframes fadeIn {from { opacity: 0; }to { opacity: 1; }}
+        .correct-feedback {background-color: #d4edda;color: #155724;border-left: 4px solid #2ecc71;}
+        .incorrect-feedback {background-color: #f8d7da;color: #721c24;border-left: 4px solid #e74c3c;}
+        .explanation {background-color: #fff3cd;color: #856404;padding: 15px;margin-top: 15px;border-radius: 5px;display: none;animation: fadeIn 0.5s;}
+        button {background-color: #3498db;color: white;border: none;padding: 12px 20px;border-radius: 5px;cursor: pointer;margin-top: 15px;font-size: 16px;transition: background-color 0.3s;}
+        button:hover {background-color: #2980b9;}
+        button:disabled {background-color: #95a5a6;cursor: not-allowed;}
+        .progress-container {margin-bottom: 30px;}
+        .progress-bar {height: 12px;background-color: #ecf0f1;border-radius: 6px;margin-bottom: 10px;overflow: hidden;}
+        .progress {height: 100%;background: linear-gradient(90deg, #3498db, #2ecc71);border-radius: 6px;width: 0%;transition: width 0.5s ease;}
+        .progress-text {text-align: right;font-size: 14px;color: #7f8c8d;}
+        .results {text-align: center;padding: 30px;background-color: #e8f4f8;border-radius: 10px;margin-top: 30px;display: none;animation: fadeIn 1s;}
+        .results h2 {color: #2c3e50;margin-bottom: 20px;}
+        .score-display {font-size: 24px;font-weight: bold;color: #3498db;margin: 20px 0;}
+        .performance-feedback {font-size: 18px;margin: 20px 0;line-height: 1.5;}
+        .case-nav {display: flex;justify-content: space-between;margin-top: 30px;}
+        .case-counter {font-size: 14px;color: #7f8c8d;margin-top: 5px;}
+        .diagnosis-tag {display: inline-block;padding: 5px 10px;background-color: #e74c3c;color: white;border-radius: 20px;font-size: 14px;margin-left: 10px;}
+        .diagnosis-tag.teal {background-color: #1abc9c;}
+        .diagnosis-tag.blue {background-color: #3498db;}
+        .diagnosis-tag.purple {background-color: #9b59b6;}
+        .diagnosis-tag.orange {background-color: #e67e22;}
+        .diagnosis-tag.green {background-color: #2ecc71;}
+        .diagnosis-tag.yellow {background-color: #f1c40f;}
+        .diagnosis-tag.gray {background-color: #7f8c8d;}
+        .checkbox-multi {margin: 8px 0;display: block;}
+        .checkbox-multi.correct {background-color: #d4edda;}
+        .checkbox-multi.incorrect {background-color: #f8d7da;}
+    </style>
+</head>
+<body>
+    <h1>Casos Clínicos Interactivos</h1>
+    <h2>Trastornos del Neurodesarrollo y Ansiedad</h2>
+    <div class="credits">Instrumento elaborado con fines de práctica académica por Psic. R. Josafat Acosta García</div>
+
+    <!-- Menú de selección -->
+    <div class="selector-container" id="selector">
+        <div class="selector-title">Seleccione el tipo de evaluación que desea realizar:</div>
+        <div class="select-btns">
+            - <button class="select-btn psico" onclick="showQuiz('psico')">Evaluación 1: Enfoque psicométrico</button>
+            - <button class="select-btn clin" onclick="showQuiz('clin')">Evaluación 2: Enfoque de criterios clínicos</button>
+        </div>
+    </div>
+
+    <!-- EVALUACIÓN 1: Psicométrico (usa tu código original) -->
+    <div id="quiz-psico" class="hidden">
+        <!-- Sin duplicar los H1/H2 -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="progress-text" id="progress-text">0% completado</div>
+        </div>
+
+        <!-- Caso 1: TDAH -->
+        <div id="case1" class="case-container">
+            <div class="case-header">
+                <h3>Caso 1: Trastorno por Déficit de Atención e Hiperactividad (TDAH)</h3>
+                <span class="diagnosis-tag blue">TDAH</span>
+            </div>
+            <p><strong>Paciente:</strong> Juan, niño de 8 años</p>
+            <p><strong>Motivo de consulta:</strong> Problemas de comportamiento y rendimiento escolar</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>Dificultad para mantener la atención en tareas escolares</li>
+                <li>Frecuentemente pierde o olvida materiales</li>
+                <li>Se levanta del asiento en clase cuando se espera que permanezca sentado</li>
+                <li>Habla en exceso e interrumpe conversaciones</li>
+                <li>Los síntomas están presentes desde los 5 años</li>
+                <li>Problemas similares en casa y en la escuela</li>
+                <li>Rendimiento académico por debajo de su capacidad intelectual</li>
+            </ul>
+
+            <div class="question" id="q1">
+                <p><strong>Pregunta 1:</strong> ¿Qué subtipo de TDAH presenta Juan según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a1')">A. Presentación predominante con falta de atención</div>
+                    <div class="option" onclick="selectOption(this, 'b1')">B. Presentación predominante hiperactiva/impulsiva</div>
+                    <div class="option" onclick="selectOption(this, 'c1')">C. Presentación combinada</div>
+                    <div class="option" onclick="selectOption(this, 'd1')">D. Trastorno de conducta</div>
+                </div>
+                <div id="feedback1" class="feedback"></div>
+                <div id="explanation1" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es C. Presentación combinada. Juan muestra síntomas tanto de inatención (dificultad para mantener la atención, pierde materiales) como de hiperactividad/impulsividad (se levanta del asiento, habla en exceso, interrumpe), cumpliendo criterios para la presentación combinada.</p>
+                </div>
+                <button id="btn1" onclick="checkAnswer('1')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q2">
+                <p><strong>Pregunta 2:</strong> ¿Qué batería de pruebas psicométricas sería MÁS apropiada para evaluar a Juan?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a2')">A. ADOS-2 y ADI-R</div>
+                    <div class="option" onclick="selectOption(this, 'b2')">B. Conners 3, ESCA y BRIEF-2</div>
+                    <div class="option" onclick="selectOption(this, 'c2')">C. CELF-5 y BNTAL</div>
+                    <div class="option" onclick="selectOption(this, 'd2')">D. SCAS y CMSA</div>
+                </div>
+                <div id="feedback2" class="feedback"></div>
+                <div id="explanation2" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. El Conners 3 evalúa específicamente síntomas de TDAH, la ESCA es una escala específica para TDAH en español, y el BRIEF-2 evalúa funciones ejecutivas que suelen estar afectadas en el TDAH. El ADOS-2 y ADI-R (A) son para autismo, el CELF-5 (C) para lenguaje, y SCAS/CMSA (D) para ansiedad.</p>
+                </div>
+                <button id="btn2" onclick="checkAnswer('2')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q3">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿cuál de los siguientes NO es un criterio diagnóstico para el TDAH?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a3')">A. Varios síntomas estaban presentes antes de los 12 años</div>
+                    <div class="option" onclick="selectOption(this, 'b3')">B. Los síntomas se presentan en dos o más contextos</div>
+                    <div class="option" onclick="selectOption(this, 'c3')">C. Los síntomas persisten durante al menos 6 meses</div>
+                    <div class="option" onclick="selectOption(this, 'd3')">D. Los síntomas mejoran significativamente durante las vacaciones escolares</div>
+                </div>
+                <div id="feedback3" class="feedback"></div>
+                <div id="explanation3" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es D. La mejoría durante las vacaciones no es un criterio diagnóstico del TDAH. Los criterios incluyen: A) síntomas presentes antes de los 12 años; B) síntomas presentes en dos o más contextos; C) síntomas que persisten durante al menos 6 meses; además de interferencia significativa en el funcionamiento y que no se explique mejor por otro trastorno.</p>
+                </div>
+                <button id="btn3" onclick="checkAnswer('3')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 1 de 6</div>
+        </div>
+
+        <!-- Caso 2: Enuresis -->
+        <div id="case2" class="case-container hidden">
+            <div class="case-header">
+                <h3>Caso 2: Enuresis Nocturna</h3>
+                <span class="diagnosis-tag teal">Enuresis</span>
+            </div>
+            <p><strong>Paciente:</strong> Sofía, niña de 7 años</p>
+            <p><strong>Motivo de consulta:</strong> Mojar la cama por la noche</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>Episodios de enuresis 4-5 noches por semana</li>
+                <li>Nunca ha logrado permanecer seca por más de 2 noches consecutivas</li>
+                <li>No hay síntomas diurnos de incontinencia</li>
+                <li>No hay signos de infección urinaria</li>
+                <li>Examen físico normal</li>
+                <li>Antecedentes familiares: padre con enuresis hasta los 9 años</li>
+                <li>La niña muestra vergüenza y evita dormir fuera de casa</li>
+            </ul>
+
+            <div class="question" id="q4">
+                <p><strong>Pregunta 1:</strong> ¿Qué tipo de enuresis presenta Sofía según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a4')">A. Enuresis diurna</div>
+                    <div class="option" onclick="selectOption(this, 'b4')">B. Enuresis nocturna primaria</div>
+                    <div class="option" onclick="selectOption(this, 'c4')">C. Enuresis nocturna secundaria</div>
+                    <div class="option" onclick="selectOption(this, 'd4')">D. Enuresis mixta</div>
+                </div>
+                <div id="feedback4" class="feedback"></div>
+                <div id="explanation4" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Enuresis nocturna primaria. Sofía nunca ha logrado un período prolongado de control nocturno (primaria), los síntomas ocurren solo por la noche (nocturna), y no hay síntomas diurnos (no es mixta). No es secundaria porque no hubo un período previo de control.</p>
+                </div>
+                <button id="btn4" onclick="checkAnswer('4')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q5">
+                <p><strong>Pregunta 2:</strong> ¿Qué tipo de evaluación es MÁS relevante para el diagnóstico de enuresis?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a5')">A. Pruebas psicométricas estandarizadas</div>
+                    <div class="option" onclick="selectOption(this, 'b5')">B. Evaluación conductual y registros de observación</div>
+                    <div class="option" onclick="selectOption(this, 'c5')">C. Neuroimagen (TAC o RMN cerebral)</div>
+                    <div class="option" onclick="selectOption(this, 'd5')">D. Electroencefalograma</div>
+                </div>
+                <div id="feedback5" class="feedback"></div>
+                <div id="explanation5" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. La evaluación de la enuresis se basa principalmente en la historia clínica, evaluación conductual y registros de observación empírica. Las pruebas psicométricas (A) no son específicas para enuresis. La neuroimagen (C) y EEG (D) solo se consideran si hay signos de alarma que sugieran patología neurológica.</p>
+                </div>
+                <button id="btn5" onclick="checkAnswer('5')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q6">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿cuál es la frecuencia mínima requerida para diagnosticar enuresis?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a6')">A. Al menos 2 veces por semana durante 3 meses consecutivos</div>
+                    <div class="option" onclick="selectOption(this, 'b6')">B. Al menos 1 vez por semana durante 3 meses</div>
+                    <div class="option" onclick="selectOption(this, 'c6')">C. Al menos 2 veces al mes durante 3 meses</div>
+                    <div class="option" onclick="selectOption(this, 'd6')">D. Cualquier episodio repetitivo que cause malestar</div>
+                </div>
+                <div id="feedback6" class="feedback"></div>
+                <div id="explanation6" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es A. Según el DSM-5-TR, para diagnosticar enuresis se requiere una emisión repetida de orina en la cama o en la ropa, ya sea de forma involuntaria o intencionada, que ocurra al menos dos veces por semana durante un mínimo de tres meses consecutivos, o que cause malestar clínicamente significativo.</p>
+                </div>
+                <button id="btn6" onclick="checkAnswer('6')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 2 de 6</div>
+        </div>
+
+        <!-- Caso 3: Encopresis -->
+        <div id="case3" class="case-container hidden">
+            <div class="case-header">
+                <h3>Caso 3: Encopresis con Estreñimiento</h3>
+                <span class="diagnosis-tag">Encopresis</span>
+            </div>
+            <p><strong>Paciente:</strong> Diego, niño de 6 años</p>
+            <p><strong>Motivo de consulta:</strong> Escape de heces en la ropa interior</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>Mancha su ropa interior con heces 3-4 veces por semana</li>
+                <li>Historia de estreñimiento desde los 3 años</li>
+                <li>Evita defecar y retiene las heces</li>
+                <li>Heces en "bolitas" duras cuando logra defecar</li>
+                <li>Algunas veces hay escape de heces líquidas (parece diarrea)</li>
+                <li>Examen abdominal: masa fecal palpable</li>
+                <li>No hay problemas neurológicos identificados</li>
+            </ul>
+
+            <div class="question" id="q7">
+                <p><strong>Pregunta 1:</strong> ¿Qué tipo de encopresis presenta Diego según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a7')">A. Encopresis sin estreñimiento</div>
+                    <div class="option" onclick="selectOption(this, 'b7')">B. Encopresis con estreñimiento e incontinencia por rebosamiento</div>
+                    <div class="option" onclick="selectOption(this, 'c7')">C. Trastorno de conducta disocial</div>
+                    <div class="option" onclick="selectOption(this, 'd7')">D. Incontinencia fecal por enfermedad médica</div>
+                </div>
+                <div id="feedback7" class="feedback"></div>
+                <div id="explanation7" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Diego presenta el patrón típico de encopresis con estreñimiento e incontinencia por rebosamiento: retención fecal crónica lleva a impactación, con escape de heces líquidas alrededor de la masa fecal impactada. No es un trastorno de conducta (C) ni hay evidencia de enfermedad médica (D).</p>
+                </div>
+                <button id="btn7" onclick="checkAnswer('7')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q8">
+                <p><strong>Pregunta 2:</strong> ¿Qué evaluación es fundamental antes de diagnosticar encopresis?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a8')">A. Evaluación de inteligencia</div>
+                    <div class="option" onclick="selectOption(this, 'b8')">B. Descartar patologías orgánicas mediante examen físico</div>
+                    <div class="option" onclick="selectOption(this, 'c8')">C. Pruebas de personalidad</div>
+                    <div class="option" onclick="selectOption(this, 'd8')">D. Evaluación neuropsicológica completa</div>
+                </div>
+                <div id="feedback8" class="feedback"></div>
+                <div id="explanation8" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Antes de diagnosticar encopresis, es fundamental descartar causas orgánicas mediante examen físico (incluyendo evaluación abdominal y rectal cuando sea indicado) y considerar posibles condiciones médicas subyacentes. Las evaluaciones psicológicas (A, C, D) pueden ser complementarias pero no son el primer paso.</p>
+                </div>
+                <button id="btn8" onclick="checkAnswer('8')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q9">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿cuál es la edad cronológica mínima requerida para diagnosticar encopresis?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a9')">A. 2 años</div>
+                    <div class="option" onclick="selectOption(this, 'b9')">B. 3 años</div>
+                    <div class="option" onclick="selectOption(this, 'c9')">C. 4 años</div>
+                    <div class="option" onclick="selectOption(this, 'd9')">D. 5 años</div>
+                </div>
+                <div id="feedback9" class="feedback"></div>
+                <div id="explanation9" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es C. Según el DSM-5-TR, para diagnosticar encopresis el niño debe tener una edad cronológica de al menos 4 años (o un nivel de desarrollo equivalente). Esto se debe a que antes de esta edad, el control de esfínteres puede no estar completamente desarrollado.</p>
+                </div>
+                <button id="btn9" onclick="checkAnswer('9')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 3 de 6</div>
+        </div>
+
+        <!-- Caso 4: Trastorno Fonológico -->
+        <div id="case4" class="case-container hidden">
+            <div class="case-header">
+                <h3>Caso 4: Trastorno Fonológico</h3>
+                <span class="diagnosis-tag purple">Trastorno Fonológico</span>
+            </div>
+            <p><strong>Paciente:</strong> Carlos, niño de 5 años</p>
+            <p><strong>Motivo de consulta:</strong> Dificultades en la pronunciación</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>No pronuncia correctamente los sonidos /r/, /s/ y /l/</li>
+                <li>Sustituye "casa" por "cata", "perro" por "pejo"</li>
+                <li>Su lenguaje es difícil de entender para personas fuera del núcleo familiar</li>
+                <li>Desarrollo motor y cognitivo dentro de lo esperado</li>
+                <li>Audición normal confirmada por audiometría</li>
+                <li>No hay problemas estructurales en órganos fonoarticulatorios</li>
+                <li>Frustración cuando no le entienden</li>
+            </ul>
+
+            <div class="question" id="q10">
+                <p><strong>Pregunta 1:</strong> ¿Qué trastorno del lenguaje presenta Carlos según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a10')">A. Trastorno del lenguaje pragmático</div>
+                    <div class="option" onclick="selectOption(this, 'b10')">B. Trastorno fonológico</div>
+                    <div class="option" onclick="selectOption(this, 'c10')">C. Trastorno de la fluencia de inicio en la infancia</div>
+                    <div class="option" onclick="selectOption(this, 'd10')">D. Trastorno de la comunicación social</div>
+                </div>
+                <div id="feedback10" class="feedback"></div>
+                <div id="explanation10" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Carlos presenta un trastorno fonológico caracterizado por dificultades persistentes en la producción de sonidos del habla que interfieren con la inteligibilidad del lenguaje. No hay evidencia de problemas pragmáticos (A, D) ni de fluencia (C).</p>
+                </div>
+                <button id="btn10" onclick="checkAnswer('10')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q11">
+                <p><strong>Pregunta 2:</strong> ¿Qué profesional sería MÁS adecuado para realizar la evaluación específica del trastorno de Carlos?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a11')">A. Neuropsicólogo</div>
+                    <div class="option" onclick="selectOption(this, 'b11')">B. Logopeda</div>
+                    <div class="option" onclick="selectOption(this, 'c11')">C. Psiquiatra infantil</div>
+                    <div class="option" onclick="selectOption(this, 'd11')">D. Psicólogo educativo</div>
+                </div>
+                <div id="feedback11" class="feedback"></div>
+                <div id="explanation11" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. El logopeda es el profesional especializado en la evaluación y tratamiento de los trastornos del habla y lenguaje, incluyendo los trastornos fonológicos. El psicólogo puede identificar el problema, pero la evaluación específica y tratamiento corresponde al logopeda.</p>
+                </div>
+                <button id="btn11" onclick="checkAnswer('11')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q12">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿cuál de los siguientes NO es un criterio para el trastorno fonológico?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a12')">A. Dificultades persistentes en la producción de sonidos del habla</div>
+                    <div class="option" onclick="selectOption(this, 'b12')">B. Las limitaciones interfieren con la comunicación social</div>
+                    <div class="option" onclick="selectOption(this, 'c12')">C. Inicio en el período temprano del desarrollo</div>
+                    <div class="option" onclick="selectOption(this, 'd12')">D. Las dificultades no se deben a condiciones médicas o neurológicas</div>
+                </div>
+                <div id="feedback12" class="feedback"></div>
+                <div id="explanation12" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Aunque las dificultades fonológicas pueden afectar la comunicación, el criterio específico del DSM-5-TR se refiere a interferencia con la comunicación verbal, no específicamente con la comunicación social. Los criterios incluyen: A) dificultades persistentes; C) inicio temprano; D) no atribuible a condiciones médicas.</p>
+                </div>
+                <button id="btn12" onclick="checkAnswer('12')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 4 de 6</div>
+        </div>
+
+        <!-- Caso 5: TEA -->
+        <div id="case5" class="case-container hidden">
+            <div class="case-header">
+                <h3>Caso 5: Trastorno del Espectro Autista (TEA)</h3>
+                <span class="diagnosis-tag orange">TEA</span>
+            </div>
+            <p><strong>Paciente:</strong> Daniel, niño de 6 años</p>
+            <p><strong>Motivo de consulta:</strong> Dificultades en interacción social y patrones restrictivos de comportamiento</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>Tiene un vocabulario avanzado pero no sabe jugar con otros niños</li>
+                <li>Insiste en hablar solo de planetas y agujeros negros, ignorando los intereses de los demás</li>
+                <li>Se altera muchísimo con los cambios de rutina</li>
+                <li>Hace movimientos repetitivos con las manos cuando está emocionado</li>
+                <li>Hace contacto visual escaso</li>
+                <li>No responde cuando lo llaman por su nombre</li>
+                <li>Historia de retraso en el desarrollo del lenguaje (primeras palabras a los 3 años)</li>
+            </ul>
+
+            <div class="question" id="q13">
+                <p><strong>Pregunta 1:</strong> ¿Qué dos áreas principales deben estar afectadas para diagnosticar TEA según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a13')">A. Comunicación y funciones ejecutivas</div>
+                    <div class="option" onclick="selectOption(this, 'b13')">B. Comunicación social e interacción social, y patrones restrictivos y repetitivos de comportamiento</div>
+                    <div class="option" onclick="selectOption(this, 'c13')">C. Lenguaje expresivo y comprensivo</div>
+                    <div class="option" onclick="selectOption(this, 'd13')">D. Habilidades motoras y cognitivas</div>
+                </div>
+                <div id="feedback13" class="feedback"></div>
+                <div id="explanation13" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. Según el DSM-5-TR, el TEA requiere déficits persistentes en la comunicación social e interacción social, y patrones restrictivos y repetitivos de comportamiento, intereses o actividades. Estas dos áreas deben estar presentes desde la primera infancia.</p>
+                </div>
+                <button id="btn13" onclick="checkAnswer('13')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q14">
+                <p><strong>Pregunta 2:</strong> ¿Qué batería de pruebas se considera el "estándar de oro" para el diagnóstico de TEA?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a14')">A. Conners 3 y BRIEF-2</div>
+                    <div class="option" onclick="selectOption(this, 'b14')">B. ADOS-2 y ADI-R</div>
+                    <div class="option" onclick="selectOption(this, 'c14')">C. CELF-5 y PLON-R</div>
+                    <div class="option" onclick="selectOption(this, 'd14')">D. WISC-V y Batería de funciones ejecutivas</div>
+                </div>
+                <div id="feedback14" class="feedback"></div>
+                <div id="explanation14" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es B. El ADOS-2 (escala de observación) y ADI-R (entrevista a padres) se consideran el estándar de oro para el diagnóstico de TEA. El Conners 3 (A) es para TDAH, el CELF-5 (C) para lenguaje, y el WISC-V (D) para evaluación cognitiva.</p>
+                </div>
+                <button id="btn14" onclick="checkAnswer('14')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q15">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿en qué período del desarrollo deben iniciarse los síntomas del TEA?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a15')">A. Durante la primera infancia</div>
+                    <div class="option" onclick="selectOption(this, 'b15')">B. Antes de los 3 años</div>
+                    <div class="option" onclick="selectOption(this, 'c15')">C. En el período de desarrollo temprano</div>
+                    <div class="option" onclick="selectOption(this, 'd15')">D. Todas las anteriores son correctas</div>
+                </div>
+                <div id="feedback15" class="feedback"></div>
+                <div id="explanation15" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es C. Según el DSM-5-TR, los síntomas del TEA deben estar presentes en el período de desarrollo temprano. Aunque frecuentemente se manifiestan en la primera infancia o antes de los 3 años, el criterio específico es "período de desarrollo temprano", lo que permite cierta flexibilidad en la edad de manifestación.</p>
+                </div>
+                <button id="btn15" onclick="checkAnswer('15')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 5 de 6</div>
+        </div>
+
+        <!-- Caso 6: Mutismo Selectivo -->
+        <div id="case6" class="case-container hidden">
+            <div class="case-header">
+                <h3>Caso 6: Mutismo Selectivo</h3>
+                <span class="diagnosis-tag yellow">Mutismo Selectivo</span>
+            </div>
+            <p><strong>Paciente:</strong> Lucía, niña de 5 años</p>
+            <p><strong>Motivo de consulta:</strong> No habla en la escuela</p>
+            <p><strong>Historia clínica:</strong></p>
+            <ul>
+                <li>En casa habla normalmente con sus padres y hermano</li>
+                <li>En la escuela no habla con maestros ni compañeros</li>
+                <li>Lleva 6 meses asistiendo a la escuela sin hablar</li>
+                <li>Se comunica con gestos y asentimientos en la escuela</li>
+                <li>No hay problemas de lenguaje en el entorno familiar</li>
+                <li>Es tímida con personas desconocidas</li>
+                <li>No hay antecedentes de trauma o abuso</li>
+                <li>Desarrollo del lenguaje normal</li>
+            </ul>
+
+            <div class="question" id="q16">
+                <p><strong>Pregunta 1:</strong> ¿Qué trastorno presenta Lucía según el DSM-5-TR?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a16')">A. Trastorno de ansiedad social</div>
+                    <div class="option" onclick="selectOption(this, 'b16')">B. Trastorno del lenguaje</div>
+                    <div class="option" onclick="selectOption(this, 'c16')">C. Mutismo selectivo</div>
+                    <div class="option" onclick="selectOption(this, 'd16')">D. Trastorno negativista desafiante</div>
+                </div>
+                <div id="feedback16" class="feedback"></div>
+                <div id="explanation16" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es C. Lucía presenta mutismo selectivo: incapacidad persistente para hablar en situaciones sociales específicas (escuela) a pesar de hacerlo en otras situaciones (casa). No hay evidencia de trastorno del lenguaje (B) ni de comportamiento oposicionista (D).</p>
+                </div>
+                <button id="btn16" onclick="checkAnswer('16')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q17">
+                <p><strong>Pregunta 2:</strong> ¿Qué evaluación es MÁS importante para diferenciar el mutismo selectivo de un trastorno del lenguaje?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a17')">A. Observación del lenguaje en diferentes contextos</div>
+                    <div class="option" onclick="selectOption(this, 'b17')">B. Pruebas de inteligencia</div>
+                    <div class="option" onclick="selectOption(this, 'c17')">C. Evaluación neurológica completa</div>
+                    <div class="option" onclick="selectOption(this, 'd17')">D. Análisis de la dinámica familiar</div>
+                </div>
+                <div id="feedback17" class="feedback"></div>
+                <div id="explanation17" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es A. La observación del lenguaje en diferentes contextos es crucial para diferenciar mutismo selectivo (lenguaje normal en algunos contextos) de trastornos del lenguaje (dificultades en todos los contextos). Las otras evaluaciones pueden ser complementarias pero no son el elemento diferenciador principal.</p>
+                </div>
+                <button id="btn17" onclick="checkAnswer('17')">Verificar respuesta</button>
+            </div>
+
+            <div class="question hidden" id="q18">
+                <p><strong>Pregunta 3:</strong> Según el DSM-5-TR, ¿cuál es la duración mínima requerida para diagnosticar mutismo selectivo?</p>
+                <div class="options">
+                    <div class="option" onclick="selectOption(this, 'a18')">A. 1 mes</div>
+                    <div class="option" onclick="selectOption(this, 'b18')">B. 3 meses</div>
+                    <div class="option" onclick="selectOption(this, 'c18')">C. 6 meses</div>
+                    <div class="option" onclick="selectOption(this, 'd18')">D. 1 año</div>
+                </div>
+                <div id="feedback18" class="feedback"></div>
+                <div id="explanation18" class="explanation">
+                    <p><strong>Explicación:</strong> La respuesta correcta es A. Según el DSM-5-TR, la duración mínima para diagnosticar mutismo selectivo es de 1 mes (no limitado al primer mes de escuela). Esto contrasta con otros trastornos que requieren mayor duración de síntomas.</p>
+                </div>
+                <button id="btn18" onclick="checkAnswer('18')">Verificar respuesta</button>
+            </div>
+
+            <div class="case-counter">Caso 6 de 6</div>
+        </div>
+
+        <div class="case-nav">
+            <button id="prevBtn" class="hidden" onclick="prevCase()">← Caso anterior</button>
+            <button id="nextBtn" onclick="nextCase()">Siguiente caso →</button>
+        </div>
+
+        <div id="results" class="results">
+            <h2>Resultados del Cuestionario</h2>
+            <div class="score-display" id="score-text"></div>
+            <div class="performance-feedback" id="performance-feedback"></div>
+            <button onclick="resetQuiz()">Volver a empezar</button>
+        </div>
+    </div>
+
+    <!-- EVALUACIÓN 2: Clínico -->
+    <div id="quiz-clin" class="hidden">
+        <div class="progress-container">
+            <div class="progress-bar"><div class="progress" id="progress_clin"></div></div>
+            <div class="progress-text" id="progress-text_clin">0% completado</div>
+        </div>
+
+        <div id="cases-root_clin"></div>
+
+        <div class="case-nav">
+            <button id="prevBtn_clin" class="hidden" onclick="prevCase_clin()">← Caso anterior</button>
+            <button id="nextBtn_clin" onclick="nextCase_clin()">Siguiente caso →</button>
+        </div>
+
+        <div id="results_clin" class="results">
+            <h2>Resultados del Cuestionario</h2>
+            <div class="score-display" id="score-text_clin"></div>
+            <div class="performance-feedback" id="performance-feedback_clin"></div>
+            <button onclick="resetQuiz_clin()">Volver a empezar</button>
+        </div>
+    </div>
+
+    <button class="back-btn hidden" id="backBtn" onclick="backToSelector()">Volver al menú de selección</button>
+
+    <script>
+        // --- Interfaz de selección ---
+        function showQuiz(which) {
+            document.getElementById('selector').classList.add('hidden');
+            document.getElementById('backBtn').classList.remove('hidden');
+            if (which === 'psico') {
+                document.getElementById('quiz-psico').classList.remove('hidden');
+                document.getElementById('quiz-clin').classList.add('hidden');
+            } else {
+                document.getElementById('quiz-clin').classList.remove('hidden');
+                document.getElementById('quiz-psico').classList.add('hidden');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function backToSelector() {
+            document.getElementById('quiz-psico').classList.add('hidden');
+            document.getElementById('quiz-clin').classList.add('hidden');
+            document.getElementById('selector').classList.remove('hidden');
+            document.getElementById('backBtn').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- Lógica Evaluación 1 (tu código original) ---
+        // Variables globales
+        let currentCase = 1;
+        let totalCases = 6;
+        let score = 0;
+        let totalQuestions = 18;
+        let answeredQuestions = 0;
+
+        // Respuestas correctas
+        const correctAnswers = {
+            '1': 'c1','2': 'b2','3': 'd3','4': 'b4','5': 'b5','6': 'a6',
+            '7': 'b7','8': 'b8','9': 'c9','10': 'b10','11': 'b11','12': 'b12',
+            '13': 'b13','14': 'b14','15': 'c15','16': 'c16','17': 'a17','18': 'a18'
+        };
+
+        // Función para seleccionar una opción
+        function selectOption(optionElement, optionId) {
+            const questionDiv = optionElement.closest('.question');
+            const allOptions = questionDiv.querySelectorAll('.option');
+            allOptions.forEach(opt => {
+                opt.classList.remove('selected');
+                opt.style.borderLeft = "1px solid #ddd";
+            });
+            optionElement.classList.add('selected');
+            optionElement.style.borderLeft = "4px solid #3498db";
+            const btnId = "btn" + optionId.charAt(1);
+            document.getElementById(btnId).disabled = false;
+        }
+
+        // Verificar respuesta
+        function checkAnswer(questionNumber) {
+            const questionDiv = document.getElementById(`q${questionNumber}`);
+            const selectedOption = questionDiv.querySelector('.option.selected');
+            if (!selectedOption) { alert("Por favor selecciona una respuesta antes de verificar."); return; }
+            const optionId = selectedOption.getAttribute('onclick').match(/'([^']+)'/)[1];
+            const feedbackDiv = document.getElementById(`feedback${questionNumber}`);
+            const explanationDiv = document.getElementById(`explanation${questionNumber}`);
+
+            questionDiv.querySelectorAll('.option').forEach(opt => { opt.style.cursor = 'default'; opt.onclick = null; });
+
+            if (optionId === correctAnswers[questionNumber]) {
+                selectedOption.classList.add('correct');
+                feedbackDiv.textContent = "✓ Correcto!";
+                feedbackDiv.className = "feedback correct-feedback";
+                score++;
+            } else {
+                selectedOption.classList.add('incorrect');
+                feedbackDiv.textContent = "✗ Incorrecto. La respuesta correcta es: " + getCorrectAnswerText(questionNumber);
+                feedbackDiv.className = "feedback incorrect-feedback";
+                const correctOption = questionDiv.querySelector(`[onclick*="${correctAnswers[questionNumber]}"]`);
+                if (correctOption) correctOption.classList.add('correct');
+            }
+
+            feedbackDiv.style.display = 'block';
+            explanationDiv.style.display = 'block';
+            document.getElementById(`btn${questionNumber}`).disabled = true;
+
+            answeredQuestions++;
+            updateProgress();
+
+            if (questionNumber % 3 !== 0) {
+                const nextQuestion = document.getElementById(`q${parseInt(questionNumber)+1}`);
+                if (nextQuestion) { nextQuestion.classList.remove('hidden'); nextQuestion.scrollIntoView({behavior:'smooth'}); }
+            }
+        }
+
+        function getCorrectAnswerText(questionNumber) {
+            const questionDiv = document.getElementById(`q${questionNumber}`);
+            const correctOption = questionDiv.querySelector(`[onclick*="${correctAnswers[questionNumber]}"]`);
+            return correctOption ? correctOption.textContent : '';
+        }
+
+        function nextCase() {
+            document.getElementById(`case${currentCase}`).classList.add('hidden');
+            currentCase++;
+            if (currentCase > totalCases) { showResults(); return; }
+            document.getElementById(`case${currentCase}`).classList.remove('hidden');
+            document.getElementById('prevBtn').classList.remove('hidden');
+            if (currentCase === totalCases) document.getElementById('nextBtn').textContent = 'Ver resultados →';
+            scrollToTop();
+        }
+
+        function prevCase() {
+            document.getElementById(`case${currentCase}`).classList.add('hidden');
+            currentCase--;
+            document.getElementById(`case${currentCase}`).classList.remove('hidden');
+            if (currentCase === 1) document.getElementById('prevBtn').classList.add('hidden');
+            document.getElementById('nextBtn').textContent = 'Siguiente caso →';
+            scrollToTop();
+        }
+
+        function updateProgress() {
+            const progressPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
+            document.getElementById('progress').style.width = `${progressPercentage}%`;
+            document.getElementById('progress-text').textContent = `${progressPercentage}% completado`;
+        }
+
+        function showResults() {
+            // Acotado al contenedor psico para evitar afectar el modo clínico
+            document.querySelector('#quiz-psico .case-nav').classList.add('hidden');
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            document.getElementById('score-text').textContent = `Puntuación: ${score} de ${totalQuestions} correctas`;
+
+            let performanceFeedback = "";
+            const percentage = (score / totalQuestions) * 100;
+            if (percentage >= 85) performanceFeedback = "¡Excelente! Demuestras un conocimiento excepcional sobre estos trastornos.";
+            else if (percentage >= 60) performanceFeedback = "Buen trabajo. Tienes una buena comprensión, pero hay algunos conceptos que podrías repasar.";
+            else performanceFeedback = "Sigue practicando. Te recomendamos revisar los conceptos clave de estos trastornos para mejorar tu comprensión.";
+
+            document.getElementById('performance-feedback').textContent = performanceFeedback;
+            scrollToTop();
+        }
+
+        function resetQuiz() {
+            currentCase = 1; score = 0; answeredQuestions = 0;
+
+            // Scoping al contenedor psico
+            document.querySelectorAll('#quiz-psico .case-container').forEach(c => c.classList.add('hidden'));
+            document.getElementById('case1').classList.remove('hidden');
+
+            document.querySelectorAll('#quiz-psico .question').forEach((q, index) => {
+                if (index % 3 === 0) q.classList.remove('hidden'); else q.classList.add('hidden');
+            });
+
+            document.querySelectorAll('#quiz-psico .option').forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+                opt.style.cursor = 'pointer';
+                opt.style.borderLeft = "1px solid #ddd";
+                const onclickAttr = opt.getAttribute('onclick');
+                if (onclickAttr) opt.onclick = new Function(onclickAttr);
+            });
+
+            document.querySelectorAll('#quiz-psico .feedback, #quiz-psico .explanation').forEach(el => { el.style.display = 'none'; });
+
+            document.getElementById('progress').style.width = '0%';
+            document.getElementById('progress-text').textContent = '0% completado';
+
+            document.getElementById('prevBtn').classList.add('hidden');
+            document.getElementById('nextBtn').textContent = 'Siguiente caso →';
+            document.getElementById('nextBtn').onclick = nextCase;
+
+            document.getElementById('results').style.display = 'none';
+
+            for (let i = 1; i <= totalQuestions; i++) {
+                const btn = document.getElementById(`btn${i}`);
+                if (btn) btn.disabled = false;
+            }
+
+            scrollToTop();
+        }
+
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function scrollToElement(element) { element.scrollIntoView({ behavior: 'smooth' }); }
+
+        // --- Lógica Evaluación 2 (clínico, aislada con _clin) ---
+        const casesData_clin = [
+            {
+                header: {title:"Caso 1: Trastorno por Déficit de Atención e Hiperactividad (TDAH)",tag:"TDAH",class:"blue"},
+                patient:"Juan, niño de 8 años",
+                motivo:"Problemas de comportamiento y rendimiento escolar",
+                clinica:[
+                    "Dificultad para mantener la atención en tareas escolares",
+                    "Frecuentemente pierde o olvida materiales",
+                    "Se levanta del asiento en clase cuando se espera que permanezca sentado",
+                    "Habla en exceso e interrumpe conversaciones",
+                    "Los síntomas están presentes desde los 5 años",
+                    "Problemas similares en casa y en la escuela",
+                    "Rendimiento académico por debajo de su capacidad intelectual"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué conducta de Juan es más característica de TDAH según DSM-5-TR?",
+                        opciones:[
+                            "Dificultad para mantener la atención y olvidar materiales",
+                            "Solo rendimiento académico bajo",
+                            "Problemas solo en casa",
+                            "Síntomas desde hace menos de 6 meses"
+                        ],
+                        correcta:0,
+                        explicacion:"La dificultad para mantener la atención y olvidar materiales son síntomas nucleares del TDAH según DSM-5-TR. El bajo rendimiento puede ser consecuencia, pero no es criterio diagnóstico. Los síntomas deben estar presentes en más de un contexto y por al menos 6 meses."
+                    },
+                    {
+                        enunciado:"¿Qué instrumento psicométrico es más útil para evaluar TDAH en niños?",
+                        opciones:[
+                            "WISC-V",
+                            "Escala de Conners",
+                            "Test de Raven",
+                            "Inventario de Ansiedad de Beck"
+                        ],
+                        correcta:1,
+                        explicacion:"La Escala de Conners es uno de los instrumentos más usados y validados para la evaluación de síntomas de TDAH en niños según criterios DSM-5-TR. El WISC-V y Raven evalúan inteligencia, el Inventario de Beck evalúa ansiedad."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de TDAH según DSM-5-TR:",
+                        opciones:[
+                            "Síntomas presentes antes de los 12 años",
+                            "Síntomas presentes por al menos 6 meses",
+                            "Síntomas en dos o más ambientes (escuela y casa)",
+                            "Presencia de psicosis",
+                            "Inicio después de los 14 años",
+                            "Afectación en funcionamiento social/escolar",
+                            "Solo síntomas en casa"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"Los criterios DSM-5-TR para TDAH incluyen: inicio antes de los 12 años, síntomas por al menos 6 meses, presencia en dos o más ambientes y afectación en el funcionamiento. Exclusión de causas médicas/psicosis."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 2: Enuresis Nocturna",tag:"Enuresis",class:"teal"},
+                patient:"Sofía, niña de 7 años",
+                motivo:"Mojar la cama por la noche",
+                clinica:[
+                    "Episodios de enuresis 4-5 noches por semana",
+                    "Nunca ha logrado permanecer seca por más de 2 noches consecutivas",
+                    "No hay síntomas diurnos de incontinencia",
+                    "No hay signos de infección urinaria",
+                    "Examen físico normal",
+                    "Antecedentes familiares: padre con enuresis hasta los 9 años",
+                    "La niña muestra vergüenza y evita dormir fuera de casa"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué dato clínico es más relevante para el diagnóstico de enuresis nocturna primaria?",
+                        opciones:[
+                            "Nunca ha estado seca por más de dos noches",
+                            "Presencia de síntomas diurnos",
+                            "Infección urinaria",
+                            "Antecedente de cirugía renal"
+                        ],
+                        correcta:0,
+                        explicacion:"El diagnóstico de enuresis nocturna primaria requiere que la niña nunca haya logrado un periodo prolongado de control nocturno; los síntomas diurnos o infecciones no corresponden a este tipo."
+                    },
+                    {
+                        enunciado:"¿Cuál es la herramienta de evaluación más utilizada en enuresis?",
+                        opciones:[
+                            "Diario miccional",
+                            "Escala de Conners",
+                            "Cuestionario de desarrollo psicomotor",
+                            "Test de Raven"
+                        ],
+                        correcta:0,
+                        explicacion:"El diario miccional es la herramienta principal para evaluar la enuresis, pues permite registrar frecuencia, volumen y patrón de episodios nocturnos."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Enuresis según DSM-5-TR:",
+                        opciones:[
+                            "Edad mínima de 5 años",
+                            "Episodios al menos 2 veces por semana durante 3 meses",
+                            "Ausencia de causas médicas (infección urinaria, diabetes)",
+                            "Presencia de síntomas diurnos",
+                            "Inicio después de los 10 años",
+                            "Afectación en funcionamiento social/emocional",
+                            "Antecedente familiar de enuresis"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"Criterios DSM-5-TR para enuresis: edad mínima de 5 años, frecuencia adecuada, exclusión de causas médicas, afectación funcional."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 3: Encopresis con Estreñimiento",tag:"Encopresis"},
+                patient:"Diego, niño de 6 años",
+                motivo:"Escape de heces en la ropa interior",
+                clinica:[
+                    "Mancha su ropa interior con heces 3-4 veces por semana",
+                    "Historia de estreñimiento desde los 3 años",
+                    "Evita defecar y retiene las heces",
+                    "Heces en 'bolitas' duras cuando logra defecar",
+                    "Algunas veces hay escape de heces líquidas (parece diarrea)",
+                    "Examen abdominal: masa fecal palpable",
+                    "No hay problemas neurológicos identificados"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué hallazgo clínico es clave para el diagnóstico de encopresis con estreñimiento?",
+                        opciones:[
+                            "Masa fecal palpable en abdomen",
+                            "Fiebre recurrente",
+                            "Antecedente de cirugía abdominal",
+                            "Problemas neurológicos"
+                        ],
+                        correcta:0,
+                        explicacion:"El hallazgo de masa fecal palpable indica impactación por estreñimiento, causa principal de encopresis con rebosamiento según DSM-5-TR."
+                    },
+                    {
+                        enunciado:"¿Qué prueba o método es esencial para la evaluación de encopresis?",
+                        opciones:[
+                            "Diario de deposiciones",
+                            "Escala de Conners",
+                            "Test de Raven",
+                            "Cuestionario de ansiedad"
+                        ],
+                        correcta:0,
+                        explicacion:"El diario de deposiciones permite evaluar la frecuencia, consistencia y patrones de evacuación, necesario para el diagnóstico de encopresis."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Encopresis según DSM-5-TR:",
+                        opciones:[
+                            "Edad mínima de 4 años",
+                            "Episodios al menos 1 vez al mes durante 3 meses",
+                            "Ausencia de causas médicas (gastrointestinales, neurológicas)",
+                            "Inicio después de los 10 años",
+                            "Afectación en funcionamiento social/emocional",
+                            "Antecedente familiar de encopresis"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"El DSM-5-TR requiere edad mínima de 4 años, frecuencia adecuada, exclusión de causas médicas y afectación funcional para encopresis."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 4: Trastorno Fonológico",tag:"Fonológico",class:"purple"},
+                patient:"Luis, niño de 5 años",
+                motivo:"Dificultad para pronunciar ciertos sonidos",
+                clinica:[
+                    "Omite o sustituye sonidos al hablar (por ejemplo, 'tasa' por 'casa')",
+                    "No hay alteraciones auditivas ni neurológicas",
+                    "El lenguaje receptivo es adecuado",
+                    "No logra ser entendido por personas fuera de su entorno familiar"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué síntoma es más sugerente de trastorno fonológico en Luis?",
+                        opciones:[
+                            "Omisión y sustitución de sonidos al hablar",
+                            "Dificultad para comprender instrucciones",
+                            "Problemas de audición",
+                            "Retraso motor general"
+                        ],
+                        correcta:0,
+                        explicacion:"El trastorno fonológico se caracteriza por errores articulatorios persistentes, como omisiones y sustituciones de sonidos, en ausencia de déficit auditivo o neurológico."
+                    },
+                    {
+                        enunciado:"¿Cuál prueba ayuda a evaluar el trastorno fonológico?",
+                        opciones:[
+                            "Prueba de articulación de sonidos",
+                            "Test de inteligencia no verbal",
+                            "Escala de Conners",
+                            "Diario de deposiciones"
+                        ],
+                        correcta:0,
+                        explicacion:"Las pruebas de articulación de sonidos permiten identificar los errores específicos y orientar el diagnóstico de trastorno fonológico, siguiendo criterios DSM-5-TR."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Trastorno Fonológico según DSM-5-TR:",
+                        opciones:[
+                            "Errores de articulación que afectan la inteligibilidad",
+                            "Ausencia de déficit auditivo o neurológico",
+                            "Afectación en funcionamiento social/comunicativo",
+                            "Problemas de comprensión",
+                            "Inicio después de los 10 años",
+                            "Retraso global del desarrollo"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"Criterios del DSM-5-TR: errores en articulación que afectan la inteligibilidad, ausencia de déficit auditivo/neurológico y afectación funcional."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 5: Trastorno Pragmático de la Comunicación",tag:"Pragmático",class:"orange"},
+                patient:"Valeria, niña de 6 años",
+                motivo:"Dificultad para conversar y seguir reglas sociales",
+                clinica:[
+                    "No entiende turnos de habla ni normas sociales",
+                    "Dificultad para adaptar el lenguaje a distintos contextos",
+                    "No presenta estereotipias ni intereses restringidos",
+                    "Lenguaje estructuralmente correcto (gramática y vocabulario)"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué síntoma es más característico del trastorno pragmático?",
+                        opciones:[
+                            "Problemas para adaptar el lenguaje a diferentes situaciones",
+                            "Ecolalia persistente",
+                            "Dificultad para articular sonidos",
+                            "Intereses restringidos"
+                        ],
+                        correcta:0,
+                        explicacion:"El trastorno pragmático se caracteriza por dificultad para usar el lenguaje en contexto social, sin alteración estructural ni intereses restringidos."
+                    },
+                    {
+                        enunciado:"¿Cuál herramienta puede apoyar la evaluación del trastorno pragmático?",
+                        opciones:[
+                            "Escala de Comunicación Social (CCC-2)",
+                            "Prueba de articulación de sonidos",
+                            "Test de Raven",
+                            "Diario de deposiciones"
+                        ],
+                        correcta:0,
+                        explicacion:"La Escala de Comunicación Social (CCC-2) permite evaluar competencias pragmáticas y diferenciar de otros trastornos del lenguaje."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Trastorno Pragmático según DSM-5-TR:",
+                        opciones:[
+                            "Dificultad para usar la comunicación verbal y no verbal en contexto social",
+                            "Ausencia de estereotipias e intereses restringidos",
+                            "Afectación en funcionamiento social/escolar",
+                            "Problemas de articulación",
+                            "Inicio después de los 10 años",
+                            "Retraso global del desarrollo"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"DSM-5-TR: dificultad en comunicación social (no estructural), sin estereotipias/intereses restringidos, afectación funcional."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 6: Trastorno del Espectro Autista (TEA)",tag:"TEA",class:"green"},
+                patient:"Jorge, niño de 4 años",
+                motivo:"Dificultades de interacción social y comportamientos repetitivos",
+                clinica:[
+                    "No establece contacto visual",
+                    "No responde a intentos de interacción social",
+                    "Realiza movimientos repetitivos con las manos",
+                    "Intereses intensos y poco flexibles en objetos específicos"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué conducta es más característica del TEA en Jorge?",
+                        opciones:[
+                            "Movimientos repetitivos y falta de contacto visual",
+                            "Retraso motor global",
+                            "Dificultad para articular sonidos",
+                            "Problemas auditivos"
+                        ],
+                        correcta:0,
+                        explicacion:"Según el DSM-5-TR, las conductas repetitivas y el déficit en la interacción social son fundamentales para el diagnóstico de TEA."
+                    },
+                    {
+                        enunciado:"¿Qué prueba psicométrica es más utilizada para evaluar TEA?",
+                        opciones:[
+                            "ADOS-2",
+                            "Escala de Conners",
+                            "Prueba de articulación de sonidos",
+                            "Test de Raven"
+                        ],
+                        correcta:0,
+                        explicacion:"El ADOS-2 es el estándar internacional para la evaluación de síntomas del espectro autista, validado para los criterios DSM-5-TR."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de TEA según DSM-5-TR:",
+                        opciones:[
+                            "Déficits persistentes en comunicación social",
+                            "Patrones de comportamiento, intereses o actividades restringidos y repetitivos",
+                            "Síntomas presentes desde el desarrollo temprano",
+                            "Problemas auditivos",
+                            "Retraso motor global",
+                            "Inicio después de los 10 años"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"DSM-5-TR: déficits persistentes en comunicación social, patrones repetitivos/restringidos, inicio temprano en desarrollo."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 7: Mutismo Selectivo",tag:"Mutismo selectivo",class:"gray"},
+                patient:"Rebeca, niña de 7 años",
+                motivo:"No habla en la escuela pero sí en casa",
+                clinica:[
+                    "Habla normalmente en casa y con familiares cercanos",
+                    "Se mantiene silenciosa en la escuela y situaciones sociales",
+                    "No hay déficit de lenguaje ni alteraciones neurológicas",
+                    "La conducta persiste por más de un mes"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué característica clínica distingue el mutismo selectivo?",
+                        opciones:[
+                            "Silencio en contextos sociales específicos",
+                            "Retraso global del lenguaje",
+                            "Problemas auditivos",
+                            "Uso de lenguaje solo con desconocidos"
+                        ],
+                        correcta:0,
+                        explicacion:"El mutismo selectivo se caracteriza por la incapacidad de hablar en ciertas situaciones sociales, a pesar de hablar normalmente en otros contextos."
+                    },
+                    {
+                        enunciado:"¿Qué herramienta puede ayudar en la evaluación de mutismo selectivo?",
+                        opciones:[
+                            "Entrevista clínica estructurada y cuestionarios de ansiedad social",
+                            "Prueba de articulación de sonidos",
+                            "Test de inteligencia",
+                            "Diario de deposiciones"
+                        ],
+                        correcta:0,
+                        explicacion:"La entrevista clínica estructurada y cuestionarios de ansiedad social ayudan a identificar el contexto y la posible comorbilidad en mutismo selectivo."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Mutismo Selectivo según DSM-5-TR:",
+                        opciones:[
+                            "Persistencia del silencio por al menos 1 mes",
+                            "Capacidad para hablar en otros contextos",
+                            "Ausencia de trastorno de lenguaje o causas médicas",
+                            "Retraso global del desarrollo",
+                            "Problemas auditivos",
+                            "Inicio después de los 10 años"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"Mutismo selectivo DSM-5-TR: persistencia del silencio al menos 1 mes, capacidad para hablar en otros contextos y exclusión de trastornos de lenguaje/causas médicas."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 8: Ansiedad Social",tag:"Ansiedad social",class:"blue"},
+                patient:"Camila, adolescente de 13 años",
+                motivo:"Miedo intenso a situaciones sociales",
+                clinica:[
+                    "Evita actividades escolares que impliquen hablar en público",
+                    "Experimenta temor intenso, sudoración y rubor ante la idea de ser observada",
+                    "El temor interfiere en su rendimiento escolar y vida social"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué síntoma es más característico de ansiedad social?",
+                        opciones:[
+                            "Miedo intenso a ser evaluada en público",
+                            "Fiebre recurrente",
+                            "Dificultad para articular sonidos",
+                            "Problemas auditivos"
+                        ],
+                        correcta:0,
+                        explicacion:"El miedo intenso y persistente a situaciones sociales en las que puede ser evaluada es el síntoma principal de la ansiedad social."
+                    },
+                    {
+                        enunciado:"¿Cuál prueba psicométrica es útil para evaluar ansiedad social?",
+                        opciones:[
+                            "Escala de Ansiedad Social para Adolescentes (SAS-A)",
+                            "Escala de Conners",
+                            "Prueba de articulación de sonidos",
+                            "Diario de deposiciones"
+                        ],
+                        correcta:0,
+                        explicacion:"La SAS-A es una escala validada que permite medir la gravedad y características de la ansiedad social en adolescentes."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Ansiedad Social según DSM-5-TR:",
+                        opciones:[
+                            "Temor intenso, persistente y desproporcionado a la exposición social",
+                            "Evitación o malestar significativo ante situaciones sociales",
+                            "Afectación en funcionamiento social/escolar",
+                            "Fiebre recurrente",
+                            "Retraso motor global",
+                            "Problemas auditivos"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"DSM-5-TR: temor intenso/persistente/desproporcionado, evitación o malestar significativo, afectación funcional."
+                    }
+                ]
+            },
+            {
+                header: {title:"Caso 9: Ansiedad por Separación",tag:"Ansiedad por separación",class:"teal"},
+                patient:"Ricardo, niño de 8 años",
+                motivo:"Miedo intenso a separarse de sus padres",
+                clinica:[
+                    "Llora y se niega a ir a la escuela",
+                    "Teme que algo malo le ocurra a sus padres cuando está lejos",
+                    "Presenta síntomas físicos como dolor abdominal y cefalea al separarse"
+                ],
+                preguntas:[
+                    {
+                        enunciado:"¿Qué síntoma es más característico de ansiedad por separación?",
+                        opciones:[
+                            "Miedo intenso y persistente a separarse de figuras de apego",
+                            "Dificultad para articular sonidos",
+                            "Problemas auditivos",
+                            "Retraso motor global"
+                        ],
+                        correcta:0,
+                        explicacion:"El miedo persistente y desproporcionado a separarse de figuras de apego es el síntoma principal de la ansiedad por separación."
+                    },
+                    {
+                        enunciado:"¿Cuál instrumento psicométrico puede apoyar el diagnóstico de ansiedad por separación?",
+                        opciones:[
+                            "Escala de Ansiedad por Separación para niños (SASC)",
+                            "Escala de Conners",
+                            "Prueba de articulación de sonidos",
+                            "Diario de deposiciones"
+                        ],
+                        correcta:0,
+                        explicacion:"La escala SASC permite identificar y cuantificar la ansiedad por separación en población infantil, apoyando los criterios DSM-5-TR."
+                    },
+                    {
+                        enunciado:"Selecciona 3 criterios diagnósticos de Ansiedad por Separación según DSM-5-TR:",
+                        opciones:[
+                            "Temor persistente por al menos 4 semanas",
+                            "Afectación en funcionamiento social/escolar",
+                            "Síntomas físicos ante separación (cefalea, dolor abdominal)",
+                            "Fiebre recurrente",
+                            "Retraso motor global",
+                            "Problemas auditivos"
+                        ],
+                        correctas:[0,1,2],
+                        explicacion:"DSM-5-TR: temor persistente por al menos 4 semanas, afectación funcional y síntomas físicos ante separación."
+                    }
+                ]
+            }
+        ];
+
+        let currentCase_clin = 1;
+        const totalCases_clin = casesData_clin.length;
+        let score_clin = 0;
+        const totalQuestions_clin = totalCases_clin * 3;
+        let answeredQuestions_clin = 0;
+
+        function shuffleArray_clin(array) {
+            let a = array.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function renderCases_clin() {
+            const root = document.getElementById('cases-root_clin');
+            root.innerHTML = "";
+            casesData_clin.forEach((caso, idxCase) => {
+                const caseDiv = document.createElement('div');
+                caseDiv.id = `case${idxCase+1}_clin`;
+                caseDiv.className = "case-container" + (idxCase>0?" hidden":"");
+                caseDiv.innerHTML +=
+                `<div class="case-header">
+                    <h3>${caso.header.title}</h3>
+                    <span class="diagnosis-tag ${caso.header.class||""}">${caso.header.tag}</span>
+                </div>
+                <p><strong>Paciente:</strong> ${caso.patient}</p>
+                <p><strong>Motivo de consulta:</strong> ${caso.motivo}</p>
+                <p><strong>Historia clínica:</strong></p>
+                <ul>${caso.clinica.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+                caso.preguntas.forEach((preg, idxPreg) => {
+                    const qn = idxCase*3+idxPreg+1;
+                    let questionHtml = "";
+                    let opcionesMezcladas = shuffleArray_clin(preg.opciones);
+                    let nuevaCorrecta = null;
+                    let nuevasCorrectas = [];
+                    if(idxPreg<2){ nuevaCorrecta = opcionesMezcladas.indexOf(preg.opciones[preg.correcta]); }
+                    else { nuevasCorrectas = preg.correctas.map(i=>opcionesMezcladas.indexOf(preg.opciones[i])); }
+                    preg._mezcladas = opcionesMezcladas;
+                    preg._correcta = nuevaCorrecta;
+                    preg._correctas = nuevasCorrectas;
+
+                    questionHtml += `<div class="question${idxPreg>0?' hidden':''}" id="q${qn}_clin">
+                    <p><strong>Pregunta ${idxPreg+1}:</strong> ${preg.enunciado}</p>
+                    <div class="options">`;
+                    if(idxPreg<2){
+                        opcionesMezcladas.forEach((op, opIdx) => {
+                            questionHtml += `<div class="option" onclick="selectOption_clin(this, '${qn}_${opIdx}')">${String.fromCharCode(65+opIdx)}. ${op}</div>`;
+                        });
+                        questionHtml += `</div><div id="feedback${qn}_clin" class="feedback"></div>
+                        <div id="explanation${qn}_clin" class="explanation">
+                            <p><strong>Explicación:</strong> ${preg.explicacion}</p>
+                        </div>
+                        <button id="btn${qn}_clin" onclick="checkAnswer_clin('${qn}')" disabled>Verificar respuesta</button>`;
+                    } else {
+                        opcionesMezcladas.forEach((op, opIdx) => {
+                            questionHtml += `<label class="checkbox-multi" id="checklabel${qn}_${opIdx}_clin">
+                                <input type="checkbox" id="check${qn}_${opIdx}_clin" onclick="enableButton_clin('${qn}')"> ${op}
+                            </label>`;
+                        });
+                        questionHtml += `</div><div id="feedback${qn}_clin" class="feedback"></div>
+                        <div id="explanation${qn}_clin" class="explanation">
+                            <p><strong>Explicación:</strong> ${preg.explicacion}</p>
+                        </div>
+                        <button id="btn${qn}_clin" onclick="checkMultiAnswer_clin('${qn}')" disabled>Verificar respuesta</button>`;
+                    }
+                    questionHtml += `</div>`;
+                    caseDiv.innerHTML += questionHtml;
+                });
+                caseDiv.innerHTML += `<div class="case-counter">Caso ${idxCase+1} de ${totalCases_clin}</div>`;
+                root.appendChild(caseDiv);
+            });
+        }
+
+        function selectOption_clin(optionElement, optionId) {
+            const questionDiv = optionElement.closest('.question');
+            const allOptions = questionDiv.querySelectorAll('.option');
+            allOptions.forEach(opt => { opt.classList.remove('selected'); opt.style.borderLeft = "1px solid #ddd"; });
+            optionElement.classList.add('selected');
+            optionElement.style.borderLeft = "4px solid #3498db";
+            const btnId = "btn" + optionId.split("_")[0] + "_clin";
+            document.getElementById(btnId).disabled = false;
+        }
+
+        function enableButton_clin(qn){
+            const checks = Array.from(document.querySelectorAll(`[id^=check${qn}_][id$=_clin]`));
+            const btn = document.getElementById('btn'+qn+'_clin');
+            btn.disabled = checks.filter(ch=>ch.checked).length!==3;
+        }
+
+        function checkAnswer_clin(qn){
+            const idxCase = Math.floor((qn-1)/3);
+            const idxPreg = ((qn-1)%3);
+            const preg = casesData_clin[idxCase].preguntas[idxPreg];
+            const questionDiv = document.getElementById(`q${qn}_clin`);
+            const selectedOption = questionDiv.querySelector('.option.selected');
+            if (!selectedOption) { alert("Por favor selecciona una respuesta antes de verificar."); return; }
+            const optionId = Number(selectedOption.getAttribute('onclick').split("_")[1].replace("')",""));
+            const feedbackDiv = document.getElementById(`feedback${qn}_clin`);
+            const explanationDiv = document.getElementById(`explanation${qn}_clin`);
+            questionDiv.querySelectorAll('.option').forEach(opt => { opt.style.cursor = 'default'; opt.onclick = null; });
+            if (optionId === preg._correcta) {
+                selectedOption.classList.add('correct');
+                feedbackDiv.textContent = "✓ Correcto!";
+                feedbackDiv.className = "feedback correct-feedback";
+                score_clin++;
+            } else {
+                selectedOption.classList.add('incorrect');
+                feedbackDiv.textContent = "✗ Incorrecto. La respuesta correcta es: " + getCorrectAnswerText_clin(qn, preg._correcta, preg._mezcladas);
+                feedbackDiv.className = "feedback incorrect-feedback";
+                const correctOption = questionDiv.querySelectorAll('.option')[preg._correcta];
+                if (correctOption) correctOption.classList.add('correct');
+            }
+            feedbackDiv.style.display = 'block';
+            explanationDiv.style.display = 'block';
+            document.getElementById(`btn${qn}_clin`).disabled = true;
+            answeredQuestions_clin++;
+            updateProgress_clin();
+            if (idxPreg<2) {
+                const nextQuestion = document.getElementById(`q${Number(qn)+1}_clin`);
+                if (nextQuestion) { nextQuestion.classList.remove('hidden'); nextQuestion.scrollIntoView({behavior:'smooth'}); }
+            }
+        }
+
+        function checkMultiAnswer_clin(qn){
+            const idxCase = Math.floor((qn-1)/3);
+            const idxPreg = ((qn-1)%3);
+            const preg = casesData_clin[idxCase].preguntas[idxPreg];
+            const questionDiv = document.getElementById(`q${qn}_clin`);
+            const feedbackDiv = document.getElementById(`feedback${qn}_clin`);
+            const explanationDiv = document.getElementById(`explanation${qn}_clin`);
+            const checks = Array.from(document.querySelectorAll(`[id^=check${qn}_][id$=_clin]`));
+            let seleccionados = [];
+            checks.forEach((ch, idx) => { ch.disabled = true; if(ch.checked) seleccionados.push(idx); });
+            let aciertos = seleccionados.filter(x=>preg._correctas.includes(x)).length;
+            let errores = seleccionados.length - aciertos;
+            checks.forEach((ch, idx) => {
+                let lbl = document.getElementById(`checklabel${qn}_${idx}_clin`);
+                if(ch.checked && preg._correctas.includes(idx)) lbl.classList.add('correct');
+                else if(ch.checked) lbl.classList.add('incorrect');
+            });
+            if(aciertos===3 && errores===0){
+                feedbackDiv.textContent = "✓ Correcto! Has seleccionado los 3 criterios diagnósticos.";
+                feedbackDiv.className = "feedback correct-feedback";
+                score_clin++;
+            } else {
+                feedbackDiv.textContent = "✗ Incorrecto. Los criterios correctos eran: " + preg._correctas.map(i=>preg._mezcladas[i]).join("; ");
+                feedbackDiv.className = "feedback incorrect-feedback";
+            }
+            feedbackDiv.style.display = 'block';
+            explanationDiv.style.display = 'block';
+            document.getElementById(`btn${qn}_clin`).disabled = true;
+            answeredQuestions_clin++;
+            updateProgress_clin();
+        }
+
+        function getCorrectAnswerText_clin(qn, idxCorrecta, opciones){
+            return String.fromCharCode(65+idxCorrecta)+". "+opciones[idxCorrecta];
+        }
+
+        function nextCase_clin() {
+            document.getElementById(`case${currentCase_clin}_clin`).classList.add('hidden');
+            currentCase_clin++;
+            if (currentCase_clin > totalCases_clin) { showResults_clin(); return; }
+            document.getElementById(`case${currentCase_clin}_clin`).classList.remove('hidden');
+            document.getElementById('prevBtn_clin').classList.remove('hidden');
+            if (currentCase_clin === totalCases_clin) document.getElementById('nextBtn_clin').textContent = 'Ver resultados →';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevCase_clin() {
+            document.getElementById(`case${currentCase_clin}_clin`).classList.add('hidden');
+            currentCase_clin--;
+            document.getElementById(`case${currentCase_clin}_clin`).classList.remove('hidden');
+            if (currentCase_clin === 1) document.getElementById('prevBtn_clin').classList.add('hidden');
+            document.getElementById('nextBtn_clin').textContent = 'Siguiente caso →';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateProgress_clin() {
+            const progressPercentage = Math.round((answeredQuestions_clin / totalQuestions_clin) * 100);
+            document.getElementById('progress_clin').style.width = `${progressPercentage}%`;
+            document.getElementById('progress-text_clin').textContent = `${progressPercentage}% completado`;
+        }
+
+        function showResults_clin() {
+            document.querySelectorAll('#quiz-clin .case-container').forEach(c => c.classList.add('hidden'));
+            document.querySelector('#quiz-clin .case-nav').classList.add('hidden');
+            const resultsDiv = document.getElementById('results_clin');
+            resultsDiv.style.display = 'block';
+            document.getElementById('score-text_clin').textContent = `Puntuación: ${score_clin} de ${totalQuestions_clin} correctas`;
+            let performanceFeedback = "";
+            const percentage = (score_clin / totalQuestions_clin) * 100;
+            if (percentage >= 85) performanceFeedback = "¡Excelente! Demuestras un conocimiento excepcional sobre estos trastornos.";
+            else if (percentage >= 60) performanceFeedback = "Buen trabajo. Tienes una buena comprensión, pero hay algunos conceptos que podrías repasar.";
+            else performanceFeedback = "Sigue practicando. Te recomendamos revisar los conceptos clave de estos trastornos para mejorar tu comprensión.";
+            document.getElementById('performance-feedback_clin').textContent = performanceFeedback;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetQuiz_clin() {
+            currentCase_clin = 1; score_clin = 0; answeredQuestions_clin = 0;
+            renderCases_clin();
+            document.querySelectorAll('#quiz-clin .case-container').forEach((c,idx) => { if(idx>0) c.classList.add('hidden'); else c.classList.remove('hidden'); });
+            document.querySelectorAll('#quiz-clin .question').forEach((q, index) => {
+                const num = parseInt(q.id.match(/q(\d+)_clin/)[1], 10);
+                // Primeras preguntas de cada caso: 1,4,7,10,13,16,19,22,25
+                if ([1,4,7,10,13,16,19,22,25].includes(num)) q.classList.remove('hidden'); else q.classList.add('hidden');
+            });
+            document.getElementById('progress_clin').style.width = '0%';
+            document.getElementById('progress-text_clin').textContent = '0% completado';
+            document.getElementById('prevBtn_clin').classList.add('hidden');
+            document.getElementById('nextBtn_clin').textContent = 'Siguiente caso →';
+            document.getElementById('nextBtn_clin').onclick = nextCase_clin;
+            document.getElementById('results_clin').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Inicializar contenido clínico al cargar
+        renderCases_clin();
+    </script>
+</body>
+</html>
